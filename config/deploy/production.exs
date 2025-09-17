@@ -9,5 +9,9 @@ use Bootleg.DSL
 #  - `identity`: local path to an identity file that will be used for SSH authentication instead of a password
 #  - `workspace`: remote file system path to be used for building and deploying this Elixir project
 
-role :app, ["app1.example.com", "app2.example.com"], workspace: "/var/app/example"
+role :app, ["staging.haikuter.com"],
+  workspace: "/var/www/bootleg_test",
+  user: "builder",
+  identity: "~/.ssh/id_ed25519",
+  silently_accept_hosts: true
 

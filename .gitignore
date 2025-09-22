@@ -35,3 +35,5 @@ bootleg_test-*.tar
 npm-debug.log
 /assets/node_modules/
 
+# Releases
+/releases/

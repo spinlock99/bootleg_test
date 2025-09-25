@@ -16,11 +16,11 @@ role :build, "localhost", workspace: "/home/builder/build",
                           identity: "~/.ssh/id_ed25519",
                           silently_accept_hosts: true
 
-task :run_phoenix_tasks do
+task :build_phoenix do
   mix_env = config({:mix_env, "prod"})
   source_path = config({:ex_path, ""})
 
-  UI.info("Running Phoenix Tasks..")
+  UI.info("Building Phoenix...")
 
   remote :build, cd: source_path do
     "MIX_ENV=#{mix_env} mix assets.deploy"
@@ -28,5 +28,5 @@ task :run_phoenix_tasks do
   end
 end
 
-before_task(:remote_generate_release, :run_phoenix_tasks)
+before_task(:remote_generate_release, :build_phoenix)
 

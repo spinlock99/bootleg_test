@@ -1,0 +1,10 @@
+[Unit]
+Description=Haikuter Restarter
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl restart haikuter.service
+
+[Install]
+WantedBy=multi-user.target

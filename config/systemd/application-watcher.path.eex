@@ -1,0 +1,5 @@
+[Path]
+PathModified=/var/www/haikuter/current/
+
+[Install]
+WantedBy=multi-user.target

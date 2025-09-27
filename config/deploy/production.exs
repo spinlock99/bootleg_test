@@ -12,6 +12,7 @@ alias Bootleg.{Config, UI}
 
 role :app, ["localhost"], workspace: "/var/www/bootleg",
                           user: "builder",
+                          app_port: 4002,
                           identity: "~/.ssh/id_ed25519",
                           silently_accept_hosts: true
 
@@ -19,14 +20,13 @@ task :init_systemd do
   require EEx
   require System
 
-  UI.info("Initalizing SystemD...")
-
+  UI.info(IO.ANSI.magenta() <> "Generating SystemD Unit File..." <> IO.ANSI.reset())
   description = Mix.Project.config()[:description]
-  port = 4002
   app_name = Mix.Project.config()[:app]
   mix_env = config({:mix_env, "prod"})
   build_role = Config.get_role(:app).hosts |> Enum.at(0)
   host_name = build_role.host.name
+  port = build_role.options[:app_port]
   user = Config.get_role(:app).user
   workspace = Config.get_role(:app).options[:workspace]
   {output, _} = System.cmd("mix", ["phx.gen.secret"])
@@ -45,10 +45,10 @@ task :init_systemd do
                                               database_url: database_url
   File.write!("releases/#{app_name}.service", service)
 
+  UI.info(IO.ANSI.magenta() <> "Uploading SystemD Unit File..." <> IO.ANSI.reset())
   remote_path = "#{app_name}.service"
   local_archive_folder = "#{File.cwd!()}/releases"
   local_path = Path.join(local_archive_folder, "#{app_name}.service")
-  UI.info("Upload SystemD Service Definition")
   upload(:app, local_path, remote_path)
 
   message = """
@@ -58,10 +58,22 @@ task :init_systemd do
     Then, enable the service.
   """
   command = """
-    sudo ln -s #{workspace}/#{app_name}.service \\
-               /etc/systemd/system/#{app_name}.service
-    systemctl enable #{app_name}
-    systemctl start #{app_name}
+      sudo ln -s #{workspace}/#{app_name}.service \\
+                 /etc/systemd/system/#{app_name}.service
+      systemctl enable #{app_name}
+      systemctl start #{app_name}
+  """
+  UI.info(IO.ANSI.magenta() <> message)
+  UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())
+
+  message = """
+
+    If you alread have configured the #{app_name} service, you can just reload
+    the system deamons with systemctl.
+  """
+
+  command = """
+      sudo systemctl daemon-reload
   """
   UI.info(IO.ANSI.magenta() <> message)
   UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())

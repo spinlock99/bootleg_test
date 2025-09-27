@@ -21,6 +21,7 @@ task :init_systemd do
 
   UI.info("Initalizing SystemD...")
 
+  description = Mix.Project.config()[:description]
   port = 4002
   app_name = Mix.Project.config()[:app]
   mix_env = config({:mix_env, "prod"})
@@ -34,6 +35,7 @@ task :init_systemd do
 
   unit_file_template = "config/systemd/application.service.eex"
   service = EEx.eval_file unit_file_template, app_name: app_name,
+                                              description: description,
                                               workspace: workspace,
                                               user: user,
                                               port: port,

@@ -1,5 +1,5 @@
 [Unit]
-Description=Bootleg Test Daemon
+Description=<%= description %>
 
 [Service]
 Type=simple

@@ -4,6 +4,7 @@ defmodule BootlegTest.MixProject do
   def project do
     [
       app: :bootleg_test,
+      description: "Test Application to Work on Deployment with Bootleg.",
       version: "0.1.0",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),

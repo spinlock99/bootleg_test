@@ -1,9 +1,9 @@
-upstream phoenix {
-	server 127.0.0.1:4001 max_fails=5 fail_timeout=60s;
+upstream <%= app_name %> {
+  server 127.0.0.1:<%= app_port %> max_fails=5 fail_timeout=60s;
 }
 
 server {
-  server_name staging.haikuter.com;
+  server_name <%= host_name %>;
 
   location / {
     proxy_http_version 1.1;
@@ -18,22 +18,22 @@ server {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Real-IP $remote_addr;
 
-    proxy_pass http://phoenix;
+    proxy_pass http://<%= app_name %>;
   }
 
   listen 443 ssl;
-  ssl_certificate /etc/ssl/certs/haikuter.com.crt;
-  ssl_certificate_key /etc/ssl/private/haikuter.com.key;
+  ssl_certificate /var/www/bootleg/selfsigned.cert.pem;
+  ssl_certificate_key /var/www/bootleg/selfsigned.key.pem;
 }
 
 
 server {
-  if ($host = staging.haikuter.com) {
+  if ($host = <%= host_name %>) {
       return 301 https://$host$request_uri;
   }
 
 
-  server_name staging.haikuter.com;
+  server_name <%= host_name %>;
 
   listen 80;
   listen [::]:80;

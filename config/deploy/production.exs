@@ -1,5 +1,7 @@
 use Bootleg.DSL
 alias Bootleg.{Config, UI}
+require EEx
+require System
 
 # Configure the following roles to match your environment.
 # `app` defines what remote servers your distillery release should be deployed and managed on.
@@ -17,16 +19,14 @@ role :app, ["localhost"], workspace: "/var/www/bootleg",
                           silently_accept_hosts: true
 
 task :init_systemd do
-  require EEx
-  require System
-
   UI.info(IO.ANSI.magenta() <> "Generating SystemD Unit File..." <> IO.ANSI.reset())
+
   description = Mix.Project.config()[:description]
   app_name = Mix.Project.config()[:app]
   mix_env = config({:mix_env, "prod"})
   build_role = Config.get_role(:app).hosts |> Enum.at(0)
   host_name = build_role.host.name
-  port = build_role.options[:app_port]
+  app_port = build_role.options[:app_port]
   user = Config.get_role(:app).user
   workspace = Config.get_role(:app).options[:workspace]
   {output, _} = System.cmd("mix", ["phx.gen.secret"])
@@ -38,7 +38,7 @@ task :init_systemd do
                                               description: description,
                                               workspace: workspace,
                                               user: user,
-                                              port: port,
+                                              app_port: app_port,
                                               mix_env: mix_env,
                                               host_name: host_name,
                                               secret_key_base: secret_key_base,
@@ -74,6 +74,44 @@ task :init_systemd do
 
   command = """
       sudo systemctl daemon-reload
+  """
+  UI.info(IO.ANSI.magenta() <> message)
+  UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())
+end
+
+task :init_nginx do
+  UI.info(IO.ANSI.magenta() <> "Generating Nginx Configuration File..." <> IO.ANSI.reset())
+
+  nginx_config_template = "config/nginx/application.conf.eex"
+  app_name = Mix.Project.config()[:app]
+  build_role = Config.get_role(:app).hosts |> Enum.at(0)
+  host_name = build_role.host.name
+  app_port = build_role.options[:app_port]
+  workspace = Config.get_role(:app).options[:workspace]
+
+  nginx_config = EEx.eval_file nginx_config_template, app_name: app_name,
+                                                      app_port: app_port,
+                                                      host_name: host_name
+  File.write!("releases/#{app_name}.conf", nginx_config)
+
+  UI.info(IO.ANSI.magenta() <> "Uploading Nginx Unit File..." <> IO.ANSI.reset())
+
+  remote_path = "#{app_name}.conf"
+  local_archive_folder = "#{File.cwd!()}/releases"
+  local_path = Path.join(local_archive_folder, "#{app_name}.conf")
+
+  upload(:app, local_path, remote_path)
+
+  message = """
+
+    You now need to link the sites-enabled directory to the configuration file
+    and signal Nginx to reload its configuration.
+  """
+
+  command = """
+      sudo ln -s #{workspace}/#{app_name}.conf \\
+                 /etc/nginx/sites-enabled/#{app_name}.conf
+      sudo nginx -s reload
   """
   UI.info(IO.ANSI.magenta() <> message)
   UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())

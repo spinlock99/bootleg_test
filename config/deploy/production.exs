@@ -12,11 +12,11 @@ require System
 #  - `identity`: local path to an identity file that will be used for SSH authentication instead of a password
 #  - `workspace`: remote file system path to be used for building and deploying this Elixir project
 
-role :app, ["localhost"], workspace: "/var/www/bootleg",
-                          user: "builder",
-                          app_port: 4002,
-                          identity: "~/.ssh/id_ed25519",
-                          silently_accept_hosts: true
+role :app, ["bootleg-test.com"], workspace: "/var/www/bootleg",
+                                 user: "builder",
+                                 app_port: 4002,
+                                 identity: "~/.ssh/id_ed25519",
+                                 silently_accept_hosts: true
 
 task :init_systemd do
   UI.info(IO.ANSI.magenta() <> "Generating SystemD Unit File..." <> IO.ANSI.reset())
@@ -115,4 +115,23 @@ task :init_nginx do
   """
   UI.info(IO.ANSI.magenta() <> message)
   UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())
+end
+
+task :self_signed_cert do
+  # create release directory for self_signed_cert files
+  cert_dir = "#{File.cwd!()}/releases/self_signed_cert"
+  File.mkdir_p!(cert_dir)
+
+  build_role = Config.get_role(:app).hosts |> Enum.at(0)
+  host_name = build_role.host.name
+
+  ######################
+  # Become a Certificate Authority
+  ######################
+  # Generate private key
+  openssl_genrsa = "openssl genrsa -passout pass:sucka -des3 -out #{host_name}-ca.key 2048"
+  System.shell(openssl_genrsa, cd: cert_dir, into: IO.stream())
+  # Generate root certificate
+  "openssl req -passin pass:sucka -x509 -new -nodes -key #{host_name}-ca.key -sha256 -days 825 -out #{host_name}-ca.pem"
+  |> System.shell(cd: cert_dir, into: IO.stream())
 end

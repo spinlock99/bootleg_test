@@ -22,8 +22,8 @@ server {
   }
 
   listen 443 ssl;
-  ssl_certificate /var/www/bootleg/selfsigned.cert.pem;
-  ssl_certificate_key /var/www/bootleg/selfsigned.key.pem;
+  ssl_certificate /etc/ssl/certs/bootleg-test.com.crt;
+  ssl_certificate_key /etc/ssl/private/bootleg-test.com.key;
 }
 
 

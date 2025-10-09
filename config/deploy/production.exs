@@ -121,7 +121,6 @@ end
 
 task :self_signed_cert do
   # create release directory for self_signed_cert files
-  cert_dir = "#{File.cwd!()}/releases/self_signed_cert"
   File.mkdir_p!(cert_dir)
 
   app_name = Mix.Project.config()[:app]
@@ -139,12 +138,8 @@ task :self_signed_cert do
   # Generate a Private Key
   "openssl genrsa -passout pass:sucka -des3 -out #{app_name}_ca.key 2048"
   |> System.shell(shell_args)
-  # Generate Config File
-  ca_config = EEx.eval_file ca_config_template, app_name: app_name,
-                                                host_name: host_name
-  File.write!("releases/self_signed_cert/ca.conf", ca_config)
   # Generate Root Certificate
-  "openssl req -config ca.conf -passin pass:sucka -x509 -new -nodes -key #{app_name}_ca.key -sha256 -days 825 -out #{app_name}_ca.pem"
+  "openssl req -passin pass:sucka -x509 -new -nodes -key #{app_name}_ca.key -sha256 -days 825 -out #{app_name}_ca.pem -extensions v3_ca -subj '/C=US/ST=CA/L=Oakland/O=Large Arcade LLC/OU=Software Engineering/emailAddress=info@largearcade.com/'"
   |> System.shell(shell_args)
 
   ######################
@@ -165,7 +160,7 @@ task :self_signed_cert do
                                                                 host_name: host_name
   File.write!("releases/self_signed_cert/extensions.conf", extensions_config)
   # Create the Signed Certificate
-  "openssl x509 -passin pass:sucka -req -in #{app_name}.csr -CA #{app_name}_ca.pem -CAkey #{app_name}_ca.key -CAcreateserial -out #{app_name}.crt -days 825 -sha256 -extfile extensions.conf"
+  "openssl x509 -passin pass:'sucka' -req -in #{app_name}.csr -CA #{app_name}_ca.pem -CAkey #{app_name}_ca.key -CAcreateserial -out #{app_name}.crt -days 825 -sha256 -extfile extensions.conf"
   |> System.shell(shell_args)
 
   ######################

@@ -22,8 +22,8 @@ server {
   }
 
   listen 443 ssl;
-  ssl_certificate /etc/ssl/certs/bootleg-test.com.crt;
-  ssl_certificate_key /etc/ssl/private/bootleg-test.com.key;
+  ssl_certificate /etc/ssl/certs/<%= host_name %>.crt;
+  ssl_certificate_key /etc/ssl/private/<%= host_name %>.key;
 }
 
 

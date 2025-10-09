@@ -5,16 +5,16 @@ default_ca = CA_LOC
 prompt            = no
 dir               = /usr/lib/ssl
 certs             = $dir/certs
-crl_dir           = $dir/crl
-new_certs_dir     = $dir/newcerts
-database          = $dir/index.txt
-serial            = $dir/serial
-RANDFILE          = $dir/private/.rand
-private_key       = $dir/private/myrootCA.key
-certificate       = $dir/certs/myrootCA.crt
-crlnumber         = $dir/crlnum
-crl               = $dir/crl/mycrl.pem
-default_crl_days  = 30
+#crl_dir           = $dir/crl
+#new_certs_dir     = $dir/newcerts
+#database          = $dir/index.txt
+#serial            = $dir/serial
+#RANDFILE          = $dir/private/.rand
+private_key       = $dir/private/<%= app_name %>_ca.key
+certificate       = $dir/certs/<%= app_name %>_ca.pem
+#crlnumber         = $dir/crlnum
+#crl               = $dir/crl/mycrl.pem
+#default_crl_days  = 30
 preserve          = no
 policy            = policy
 default_days      = 365
@@ -40,10 +40,10 @@ x509_extensions     = v3_ca
 countryName                     = US
 stateOrProvinceName             = CA
 localityName                    = Oakland
-organizationName                = myorg
-organizationalUnitName          = myorgunit
-commonName                      = SelfCA
-emailAddress                    = myemail@example.com
+organizationName                = Large Arcade LLC
+organizationalUnitName          = Software Development
+commonName                      = <%= app_name %>_ca
+emailAddress                    = info@<%= host_name %>
 
 [ v3_ca ]
 subjectKeyIdentifier = hash

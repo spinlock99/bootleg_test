@@ -171,4 +171,27 @@ task :self_signed_cert do
   "openssl verify -CAfile #{app_name}_ca.pem -verify_hostname #{host_name} #{app_name}.crt"
   |> System.shell(shell_args)
   UI.info(IO.ANSI.reset())
+
+  message = """
+
+    You should now copy the certificate and key to /etc/ssl, the CA cert
+    to /usr/local/share/ca-certificates/. Then, update your CA certs in the
+    operating system and in your browser.
+  """
+  command = """
+      sudo cp #{app_name}.crt /etc/ssl/certs
+      sudo cp #{app_name}.key /etc/ssl/private
+
+      sudo cp #{app_name}_ca.pem /usr/local/share/ca-certificates/
+      sudo update-ca-certificates
+  """
+  UI.info(IO.ANSI.magenta() <> message)
+  UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())
+
+  message = """
+
+    Now add the Certificate Authority to Chrome:
+        settings -> Privacy and security -> Security -> Manage certificates -> Authoities -> Import
+  """
+  UI.info(IO.ANSI.magenta() <> message <> IO.ANSI.reset())
 end

@@ -139,9 +139,12 @@ task :self_signed_cert do
   # Become a Certificate Authority
   ######################
 
-  # Generate a Private Key
+  UI.info(IO.ANSI.magenta() <> "Generate a Private Key for the Root Certificate...")
+  UI.info(IO.ANSI.cyan())
   System.cmd(openssl, ["genrsa", "-out","#{app_name}_ca.key"], shell_args)
-  # Generate Root Certificate
+
+  UI.info(IO.ANSI.magenta() <> "Generate Root Certificate...")
+  UI.info(IO.ANSI.cyan())
   System.cmd(
     openssl,
     [
@@ -160,10 +163,12 @@ task :self_signed_cert do
   ######################
   # Create CA-signed certs
   ######################
-
-  # Generate a Private Key
+  UI.info(IO.ANSI.magenta() <> "Generate a Private Key for the Self-Signed Cert...")
+  UI.info(IO.ANSI.cyan())
   System.cmd(openssl, ["genrsa", "-out", "#{app_name}.key"], shell_args)
-  # Create a certificate-signing request
+
+  UI.info(IO.ANSI.magenta() <> "Create a Certificate-Signing Request...")
+  UI.info(IO.ANSI.cyan())
   System.cmd(
     openssl,
     [
@@ -176,11 +181,11 @@ task :self_signed_cert do
     shell_args
   )
   # Create an Extensions Config
-  extensions_config =
-    EEx.eval_file extensions_config_template, app_name: app_name,
-                                              host_name: host_name
+  extensions_config = EEx.eval_file(extensions_config_template, app_name: app_name, host_name: host_name)
   File.write!("releases/self_signed_cert/extensions.conf", extensions_config)
-  # Create the Signed Certificate
+
+  UI.info(IO.ANSI.magenta() <> "Create the Self-Signed Certificate...")
+  UI.info(IO.ANSI.cyan())
   System.cmd(
     openssl,
     [
@@ -217,10 +222,7 @@ task :self_signed_cert do
   UI.info(IO.ANSI.reset())
 
   message = """
-
-    You should now copy the certificate and key to /etc/ssl, the CA cert
-    to /usr/local/share/ca-certificates/. Then, update your CA certs in the
-    operating system and in your browser.
+    First, copy the certificate and key to /etc/ssl:
   """
   command = """
       sudo cp releases/self_signed_cert/#{app_name}.crt /etc/ssl/certs
@@ -230,10 +232,10 @@ task :self_signed_cert do
   UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())
 
   message = """
-    Now reload your web server:
+    Then, reload your web server:
   """
   command = """
-      sudo nginx -s reload
+      sudo systemctl reload nginx.service
   """
   UI.info(IO.ANSI.magenta() <> message)
   UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())

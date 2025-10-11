@@ -120,56 +120,100 @@ task :init_nginx do
 end
 
 task :self_signed_cert do
-  # create release directory for self_signed_cert files
-  File.mkdir_p!(cert_dir)
-
-  app_name = Mix.Project.config()[:app]
-  build_role = Config.get_role(:app).hosts |> Enum.at(0)
-  host_name = build_role.host.name
-  ca_config_template = "config/self_signed_cert/ca.conf.eex"
-  signing_request_config_template = "config/self_signed_cert/signing_request.conf.eex"
+  app_name    = Mix.Project.config()[:app]
+  build_role  = Config.get_role(:app).hosts |> Enum.at(0)
+  host_name   = build_role.host.name
+  common_name = "#{app_name}"
+                |> String.split("_")
+                |> Enum.map(&String.capitalize/1)
+                |> Enum.join(" ")
   extensions_config_template = "config/self_signed_cert/extensions.conf.eex"
+
+  # create release directory for self_signed_cert files
+  cert_dir = "#{File.cwd!()}/releases/self_signed_cert"
+  File.mkdir_p!(cert_dir)
   shell_args = [cd: cert_dir, into: IO.stream()]
+  openssl = System.find_executable("openssl")
 
   ######################
   # Become a Certificate Authority
   ######################
 
   # Generate a Private Key
-  "openssl genrsa -passout pass:sucka -des3 -out #{app_name}_ca.key 2048"
-  |> System.shell(shell_args)
+  System.cmd(openssl, ["genrsa", "-out","#{app_name}_ca.key"], shell_args)
   # Generate Root Certificate
-  "openssl req -passin pass:sucka -x509 -new -nodes -key #{app_name}_ca.key -sha256 -days 825 -out #{app_name}_ca.pem -extensions v3_ca -subj '/C=US/ST=CA/L=Oakland/O=Large Arcade LLC/OU=Software Engineering/emailAddress=info@largearcade.com/'"
-  |> System.shell(shell_args)
-
+  System.cmd(
+    openssl,
+    [
+      "req",
+      "-new",
+      "-x509",
+      "-noenc",
+      "-days", "825",
+      "-extensions", "v3_ca",
+      "-key", "#{app_name}_ca.key",
+      "-out", "#{app_name}_ca.pem",
+      "-subj", "/CN=#{common_name} Root CA/"
+    ],
+    shell_args
+  )
   ######################
   # Create CA-signed certs
   ######################
 
   # Generate a Private Key
-  "openssl genrsa -out #{app_name}.key 2048"
-  |> System.shell(shell_args)
+  System.cmd(openssl, ["genrsa", "-out", "#{app_name}.key"], shell_args)
   # Create a certificate-signing request
-  signing_request_config = EEx.eval_file signing_request_config_template, app_name: app_name,
-                                                                          host_name: host_name
-  File.write!("releases/self_signed_cert/signing_request.conf", signing_request_config)
-  "openssl req -new -config signing_request.conf -key #{app_name}.key -out #{app_name}.csr"
-  |> System.shell(shell_args)
+  System.cmd(
+    openssl,
+    [
+      "req",
+      "-new",
+      "-subj", "/CN=#{host_name}/",
+      "-key", "#{app_name}.key",
+      "-out", "#{app_name}.csr"
+    ],
+    shell_args
+  )
   # Create an Extensions Config
-  extensions_config = EEx.eval_file extensions_config_template, app_name: app_name,
-                                                                host_name: host_name
+  extensions_config =
+    EEx.eval_file extensions_config_template, app_name: app_name,
+                                              host_name: host_name
   File.write!("releases/self_signed_cert/extensions.conf", extensions_config)
   # Create the Signed Certificate
-  "openssl x509 -passin pass:'sucka' -req -in #{app_name}.csr -CA #{app_name}_ca.pem -CAkey #{app_name}_ca.key -CAcreateserial -out #{app_name}.crt -days 825 -sha256 -extfile extensions.conf"
-  |> System.shell(shell_args)
+  System.cmd(
+    openssl,
+    [
+      "x509",
+      "-req",
+      "-sha256",
+      "-days", "825",
+      "-in", "#{app_name}.csr",
+      "-out", "#{app_name}.crt",
+      "-CA", "#{app_name}_ca.pem",
+      "-CAkey", "#{app_name}_ca.key",
+      "-CAcreateserial",
+      "-extfile", "extensions.conf"
+    ],
+    shell_args
+  )
 
   ######################
   # Verify the Cert
   ######################
 
+  UI.info(IO.ANSI.magenta() <> "Verifying Self-Signed Certificate...")
   UI.info(IO.ANSI.cyan())
-  "openssl verify -CAfile #{app_name}_ca.pem -verify_hostname #{host_name} #{app_name}.crt"
-  |> System.shell(shell_args)
+  System.cmd(
+    openssl,
+    [
+      "verify",
+      "-CAfile", "#{app_name}_ca.pem",
+      "-verify_hostname", "#{host_name}",
+      "#{app_name}.crt"
+    ],
+    shell_args
+  )
   UI.info(IO.ANSI.reset())
 
   message = """
@@ -179,19 +223,31 @@ task :self_signed_cert do
     operating system and in your browser.
   """
   command = """
-      sudo cp #{app_name}.crt /etc/ssl/certs
-      sudo cp #{app_name}.key /etc/ssl/private
-
-      sudo cp #{app_name}_ca.pem /usr/local/share/ca-certificates/
-      sudo update-ca-certificates
+      sudo cp releases/self_signed_cert/#{app_name}.crt /etc/ssl/certs
+      sudo cp releases/self_signed_cert/#{app_name}.key /etc/ssl/private
   """
   UI.info(IO.ANSI.magenta() <> message)
   UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())
 
   message = """
+    Now reload your web server:
+  """
+  command = """
+      sudo nginx -s reload
+  """
+  UI.info(IO.ANSI.magenta() <> message)
+  UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())
 
-    Now add the Certificate Authority to Chrome:
-        settings -> Privacy and security -> Security -> Manage certificates -> Authoities -> Import
+  message = """
+    Finally, add the Certificate Authority to Chrome:
+  """
+  command = """
+      Settings -> Privacy and security
+               -> Security
+               -> Manage certificates
+               -> Authoities
+               -> Import
   """
   UI.info(IO.ANSI.magenta() <> message <> IO.ANSI.reset())
+  UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())
 end

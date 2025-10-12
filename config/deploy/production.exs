@@ -82,21 +82,29 @@ task :init_systemd do
 end
 
 task :init_nginx do
-  UI.info(IO.ANSI.magenta() <> "Generating Nginx Configuration File..." <> IO.ANSI.reset())
+  UI.info(
+    IO.ANSI.magenta()
+    <> "Generating Nginx Configuration File..."
+    <> IO.ANSI.reset()
+  )
+
+  app_name   = Mix.Project.config()[:app]
+  build_role = Config.get_role(:app).hosts |> Enum.at(0)
+  host_name  = build_role.host.name
+  app_port   = build_role.options[:app_port]
+  workspace  = Config.get_role(:app).options[:workspace]
 
   nginx_config_template = "config/nginx/application.conf.eex"
-  app_name = Mix.Project.config()[:app]
-  build_role = Config.get_role(:app).hosts |> Enum.at(0)
-  host_name = build_role.host.name
-  app_port = build_role.options[:app_port]
-  workspace = Config.get_role(:app).options[:workspace]
-
   nginx_config = EEx.eval_file nginx_config_template, app_name: app_name,
                                                       app_port: app_port,
                                                       host_name: host_name
   File.write!("releases/#{app_name}.conf", nginx_config)
 
-  UI.info(IO.ANSI.magenta() <> "Uploading Nginx Unit File..." <> IO.ANSI.reset())
+  UI.info(
+    IO.ANSI.magenta()
+    <> "Uploading Nginx Unit File..."
+    <> IO.ANSI.reset()
+  )
 
   remote_path = "#{app_name}.conf"
   local_archive_folder = "#{File.cwd!()}/releases"

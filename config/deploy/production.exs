@@ -94,7 +94,9 @@ task :init_nginx do
   workspace  = Config.get_role(:app).options[:workspace]
 
   nginx_config_template = "config/deploy/nginx/application.conf.eex"
-  nginx_config_file = "releases/#{app_name}.conf"
+  nginx_config_dir = "releases/nginx/"
+  System.cmd("mkdir", ["-p", nginx_config_dir])
+  nginx_config_file = nginx_config_dir <> "#{app_name}.conf"
   nginx_config = EEx.eval_file nginx_config_template, app_name: app_name,
                                                       app_port: app_port,
                                                       host_name: host_name
@@ -105,7 +107,10 @@ task :init_nginx do
     <> "Uploading Nginx Unit File..."
     <> IO.ANSI.reset()
   )
-  upload(:app, nginx_config_file, "#{app_name}.conf")
+
+  remote(:app, ["mkdir -p nginx"])
+  remote_path = "nginx/#{app_name}.conf"
+  upload(:app, nginx_config_file, remote_path)
 
   message = """
 
@@ -114,7 +119,7 @@ task :init_nginx do
   """
 
   command = """
-      sudo ln -s #{workspace}/#{app_name}.conf \\
+      sudo ln -s #{workspace}/#{remote_path} \\
                  /etc/nginx/sites-enabled/#{app_name}.conf
       sudo systemctl reload nginx
   """

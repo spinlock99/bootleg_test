@@ -127,7 +127,7 @@ task :init_nginx do
   UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())
 end
 
-task :self_signed_cert do
+task :gen_cert do
   app_name    = Mix.Project.config()[:app]
   build_role  = Config.get_role(:app).hosts |> Enum.at(0)
   host_name   = build_role.host.name

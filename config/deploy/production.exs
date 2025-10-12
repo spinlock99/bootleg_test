@@ -138,7 +138,7 @@ task :gen_cert do
   extensions_config_template = "config/deploy/ssl/extensions.conf.eex"
 
   # create release directory for self_signed_cert files
-  cert_dir = "#{File.cwd!()}/releases/ssl"
+  cert_dir = "releases/ssl/"
   File.mkdir_p!(cert_dir)
   shell_args = [cd: cert_dir, into: IO.stream()]
   openssl = System.find_executable("openssl")
@@ -190,7 +190,7 @@ task :gen_cert do
   )
   # Create an Extensions Config
   extensions_config = EEx.eval_file(extensions_config_template, app_name: app_name, host_name: host_name)
-  File.write!("releases/ssl/extensions.conf", extensions_config)
+  File.write!(cert_dir <> "extensions.conf", extensions_config)
 
   UI.info(IO.ANSI.magenta() <> "Create the Self-Signed Certificate...")
   UI.info(IO.ANSI.cyan())
@@ -233,8 +233,8 @@ task :gen_cert do
     First, copy the certificate and key to /etc/ssl:
   """
   command = """
-      sudo cp releases/ssl/#{app_name}.crt /etc/ssl/certs
-      sudo cp releases/ssl/#{app_name}.key /etc/ssl/private
+      sudo cp #{cert_dir}#{app_name}.crt /etc/ssl/certs
+      sudo cp #{cert_dir}#{app_name}.key /etc/ssl/private
   """
   UI.info(IO.ANSI.magenta() <> message)
   UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())

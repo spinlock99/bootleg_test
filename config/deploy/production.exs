@@ -93,23 +93,19 @@ task :init_nginx do
   app_port   = build_role.options[:app_port]
   workspace  = Config.get_role(:app).options[:workspace]
 
-  nginx_config_template = "config/nginx/application.conf.eex"
+  nginx_config_template = "config/deploy/nginx/application.conf.eex"
+  nginx_config_file = "releases/#{app_name}.conf"
   nginx_config = EEx.eval_file nginx_config_template, app_name: app_name,
                                                       app_port: app_port,
                                                       host_name: host_name
-  File.write!("releases/#{app_name}.conf", nginx_config)
+  File.write!(nginx_config_file, nginx_config)
 
   UI.info(
     IO.ANSI.magenta()
     <> "Uploading Nginx Unit File..."
     <> IO.ANSI.reset()
   )
-
-  remote_path = "#{app_name}.conf"
-  local_archive_folder = "#{File.cwd!()}/releases"
-  local_path = Path.join(local_archive_folder, "#{app_name}.conf")
-
-  upload(:app, local_path, remote_path)
+  upload(:app, nginx_config_file, "#{app_name}.conf")
 
   message = """
 

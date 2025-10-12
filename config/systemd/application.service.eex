@@ -7,7 +7,7 @@ User=<%= user %>
 Group=<%= user %>
 Restart=on-failure
 
-Environment=PORT=<%= port %>
+Environment=PORT=<%= app_port %>
 Environment=MIX_ENV=<%= mix_env %>
 Environment=PHX_SERVER=true
 Environment=PHX_HOST=<%= host_name %>

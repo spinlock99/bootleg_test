@@ -35,7 +35,8 @@ task :init_systemd do
   workspace    = Config.get_role(:app).options[:workspace]
   database_url = "ecto://postgres:postgres@#{host_name}/#{app_name}_#{mix_env}"
 
-  unit_file_template = "config/systemd/application.service.eex"
+  unit_file_template = "config/deploy/systemd/application.service.eex"
+  unit_file = "releases/#{app_name}.service"
   service = EEx.eval_file unit_file_template, app_name: app_name,
                                               description: description,
                                               workspace: workspace,
@@ -45,13 +46,11 @@ task :init_systemd do
                                               host_name: host_name,
                                               secret_key_base: secret_key_base,
                                               database_url: database_url
-  File.write!("releases/#{app_name}.service", service)
+  File.write!(unit_file, service)
 
   UI.info(IO.ANSI.magenta() <> "Uploading SystemD Unit File..." <> IO.ANSI.reset())
   remote_path = "#{app_name}.service"
-  local_archive_folder = "#{File.cwd!()}/releases"
-  local_path = Path.join(local_archive_folder, "#{app_name}.service")
-  upload(:app, local_path, remote_path)
+  upload(:app, unit_file, remote_path)
 
   message = """
 

@@ -120,7 +120,7 @@ task :init_nginx do
   command = """
       sudo ln -s #{workspace}/#{app_name}.conf \\
                  /etc/nginx/sites-enabled/#{app_name}.conf
-      sudo nginx -s reload
+      sudo systemctl reload nginx
   """
   UI.info(IO.ANSI.magenta() <> message)
   UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())
@@ -242,7 +242,7 @@ task :gen_cert do
     Then, reload your web server:
   """
   command = """
-      sudo systemctl reload nginx.service
+      sudo systemctl reload nginx
   """
   UI.info(IO.ANSI.magenta() <> message)
   UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())

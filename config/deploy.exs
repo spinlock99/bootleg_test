@@ -29,4 +29,3 @@ task :build_phoenix do
 end
 
 before_task(:remote_generate_release, :build_phoenix)
-

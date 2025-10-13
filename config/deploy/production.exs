@@ -36,7 +36,9 @@ task :init_systemd do
   database_url = "ecto://postgres:postgres@#{host_name}/#{app_name}_#{mix_env}"
 
   unit_file_template = "config/deploy/systemd/application.service.eex"
-  unit_file = "releases/#{app_name}.service"
+  unit_directory = "releases/systemd/"
+  System.cmd("mkdir", ["-p", unit_directory])
+  unit_file = unit_directory <> "#{app_name}.service"
   service = EEx.eval_file unit_file_template, app_name: app_name,
                                               description: description,
                                               workspace: workspace,
@@ -49,17 +51,19 @@ task :init_systemd do
   File.write!(unit_file, service)
 
   UI.info(IO.ANSI.magenta() <> "Uploading SystemD Unit File..." <> IO.ANSI.reset())
-  remote_path = "#{app_name}.service"
+  remote_dir = "systemd/"
+  remote(:app, ["mkdir -p #{remote_dir}"])
+  remote_path = remote_dir <> "#{app_name}.service"
   upload(:app, unit_file, remote_path)
 
   message = """
 
-    You should now create a link in /etc/systemd/system/
-    to allow systemd to manage the #{app_name} service.
-    Then, enable the service.
+    You should now ssh onto the server and  create a link in
+    /etc/systemd/system/ to allow systemd to manage the #{app_name}
+    service.  Then, enable the service.
   """
   command = """
-      sudo ln -s #{workspace}/#{app_name}.service \\
+      sudo ln -s #{workspace}/#{remote_path} \\
                  /etc/systemd/system/#{app_name}.service
       systemctl enable #{app_name}
       systemctl start #{app_name}

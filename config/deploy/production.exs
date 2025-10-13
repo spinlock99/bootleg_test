@@ -35,7 +35,10 @@ task :init_systemd do
   workspace    = Config.get_role(:app).options[:workspace]
   database_url = "ecto://postgres:postgres@#{host_name}/#{app_name}_#{mix_env}"
 
-  unit_file_template = "config/systemd/application.service.eex"
+  unit_file_template = "config/deploy/systemd/application.service.eex"
+  unit_directory = "releases/systemd/"
+  System.cmd("mkdir", ["-p", unit_directory])
+  unit_file = unit_directory <> "#{app_name}.service"
   service = EEx.eval_file unit_file_template, app_name: app_name,
                                               description: description,
                                               workspace: workspace,
@@ -45,22 +48,22 @@ task :init_systemd do
                                               host_name: host_name,
                                               secret_key_base: secret_key_base,
                                               database_url: database_url
-  File.write!("releases/#{app_name}.service", service)
+  File.write!(unit_file, service)
 
   UI.info(IO.ANSI.magenta() <> "Uploading SystemD Unit File..." <> IO.ANSI.reset())
-  remote_path = "#{app_name}.service"
-  local_archive_folder = "#{File.cwd!()}/releases"
-  local_path = Path.join(local_archive_folder, "#{app_name}.service")
-  upload(:app, local_path, remote_path)
+  remote_dir = "systemd/"
+  remote(:app, ["mkdir -p #{remote_dir}"])
+  remote_path = remote_dir <> "#{app_name}.service"
+  upload(:app, unit_file, remote_path)
 
   message = """
 
-    You should now create a link in /etc/systemd/system/
-    to allow systemd to manage the #{app_name} service.
-    Then, enable the service.
+    You should now ssh onto the server and  create a link in
+    /etc/systemd/system/ to allow systemd to manage the #{app_name}
+    service.  Then, enable the service.
   """
   command = """
-      sudo ln -s #{workspace}/#{app_name}.service \\
+      sudo ln -s #{workspace}/#{remote_path} \\
                  /etc/systemd/system/#{app_name}.service
       systemctl enable #{app_name}
       systemctl start #{app_name}
@@ -94,11 +97,14 @@ task :init_nginx do
   app_port   = build_role.options[:app_port]
   workspace  = Config.get_role(:app).options[:workspace]
 
-  nginx_config_template = "config/nginx/application.conf.eex"
+  nginx_config_template = "config/deploy/nginx/application.conf.eex"
+  nginx_config_dir = "releases/nginx/"
+  System.cmd("mkdir", ["-p", nginx_config_dir])
+  nginx_config_file = nginx_config_dir <> "#{app_name}.conf"
   nginx_config = EEx.eval_file nginx_config_template, app_name: app_name,
                                                       app_port: app_port,
                                                       host_name: host_name
-  File.write!("releases/#{app_name}.conf", nginx_config)
+  File.write!(nginx_config_file, nginx_config)
 
   UI.info(
     IO.ANSI.magenta()
@@ -106,11 +112,9 @@ task :init_nginx do
     <> IO.ANSI.reset()
   )
 
-  remote_path = "#{app_name}.conf"
-  local_archive_folder = "#{File.cwd!()}/releases"
-  local_path = Path.join(local_archive_folder, "#{app_name}.conf")
-
-  upload(:app, local_path, remote_path)
+  remote(:app, ["mkdir -p nginx"])
+  remote_path = "nginx/#{app_name}.conf"
+  upload(:app, nginx_config_file, remote_path)
 
   message = """
 
@@ -119,9 +123,9 @@ task :init_nginx do
   """
 
   command = """
-      sudo ln -s #{workspace}/#{app_name}.conf \\
+      sudo ln -s #{workspace}/#{remote_path} \\
                  /etc/nginx/sites-enabled/#{app_name}.conf
-      sudo nginx -s reload
+      sudo systemctl reload nginx
   """
   UI.info(IO.ANSI.magenta() <> message)
   UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())
@@ -135,10 +139,10 @@ task :gen_cert do
                 |> String.split("_")
                 |> Enum.map(&String.capitalize/1)
                 |> Enum.join(" ")
-  extensions_config_template = "config/self_signed_cert/extensions.conf.eex"
+  extensions_config_template = "config/deploy/ssl/extensions.conf.eex"
 
   # create release directory for self_signed_cert files
-  cert_dir = "#{File.cwd!()}/releases/self_signed_cert"
+  cert_dir = "releases/ssl/"
   File.mkdir_p!(cert_dir)
   shell_args = [cd: cert_dir, into: IO.stream()]
   openssl = System.find_executable("openssl")
@@ -190,7 +194,7 @@ task :gen_cert do
   )
   # Create an Extensions Config
   extensions_config = EEx.eval_file(extensions_config_template, app_name: app_name, host_name: host_name)
-  File.write!("releases/self_signed_cert/extensions.conf", extensions_config)
+  File.write!(cert_dir <> "extensions.conf", extensions_config)
 
   UI.info(IO.ANSI.magenta() <> "Create the Self-Signed Certificate...")
   UI.info(IO.ANSI.cyan())
@@ -233,8 +237,8 @@ task :gen_cert do
     First, copy the certificate and key to /etc/ssl:
   """
   command = """
-      sudo cp releases/self_signed_cert/#{app_name}.crt /etc/ssl/certs
-      sudo cp releases/self_signed_cert/#{app_name}.key /etc/ssl/private
+      sudo cp #{cert_dir}#{app_name}.crt /etc/ssl/certs
+      sudo cp #{cert_dir}#{app_name}.key /etc/ssl/private
   """
   UI.info(IO.ANSI.magenta() <> message)
   UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())
@@ -243,7 +247,7 @@ task :gen_cert do
     Then, reload your web server:
   """
   command = """
-      sudo systemctl reload nginx.service
+      sudo systemctl reload nginx
   """
   UI.info(IO.ANSI.magenta() <> message)
   UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())

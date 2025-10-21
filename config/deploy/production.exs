@@ -85,8 +85,9 @@ task :init_systemd do
   """
   command = """
       sudo ln -s #{workspace}/#{remote_path} /etc/systemd/system/#{app_name}.service
-      sudo chown root:root #{workspace}/#{remote_dir}#{app_name}.env
-      sudo chmod 400 #{workspace}/#{remote_dir}#{app_name}.env
+      sudo mv #{workspace}/#{remote_dir}#{app_name}.env /etc/#{app_name}.env
+      sudo chown root:root /etc/#{app_name}.env
+      sudo chmod 400 /etc/#{app_name}.env
       sudo systemctl enable #{app_name}
       sudo systemctl start #{app_name}
   """

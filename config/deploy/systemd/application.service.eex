@@ -12,7 +12,7 @@ Environment=MIX_ENV=<%= mix_env %>
 Environment=PHX_SERVER=true
 Environment=PHX_HOST=<%= host_name %>
 Environment=LANG=en_US.UTF-8
-EnvironmentFile=<%= workspace %>/systemd/<%= app_name %>.env
+EnvironmentFile=/etc/<%= app_name %>.env
 
 WorkingDirectory=<%= workspace %>/<%= app_name %>
 ExecStart=<%= workspace %>/<%= app_name %>/bin/<%= app_name %> start

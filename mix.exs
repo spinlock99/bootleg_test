@@ -67,7 +67,7 @@ defmodule BootlegTest.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
-      {:bootleg, path: "../bootleg", only: :dev}
+      {:bootleg, github: "spinlock99/bootleg", only: :dev}
     ]
   end
 

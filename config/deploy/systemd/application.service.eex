@@ -11,9 +11,8 @@ Environment=PORT=<%= app_port %>
 Environment=MIX_ENV=<%= mix_env %>
 Environment=PHX_SERVER=true
 Environment=PHX_HOST=<%= host_name %>
-Environment=DATABASE_URL=<%= database_url %>
-Environment=SECRET_KEY_BASE=<%= secret_key_base %>
 Environment=LANG=en_US.UTF-8
+EnvironmentFile=/etc/<%= app_name %>.env
 
 WorkingDirectory=<%= workspace %>/<%= app_name %>
 ExecStart=<%= workspace %>/<%= app_name %>/bin/<%= app_name %> start

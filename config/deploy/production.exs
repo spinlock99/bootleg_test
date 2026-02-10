@@ -45,31 +45,22 @@ task :init_systemd do
                                               user: user,
                                               app_port: app_port,
                                               mix_env: mix_env,
-                                              host_name: host_name,
-                                              secret_key_base: secret_key_base,
-                                              database_url: database_url
+                                              host_name: host_name
   File.write!(unit_file, service)
+
+  env_file_template = "config/deploy/systemd/application.env.eex"
+  env_file = unit_directory <> "#{app_name}.env"
+  environment = EEx.eval_file env_file_template, app_name: app_name,
+                                                 secret_key_base: secret_key_base,
+                                                 database_url: database_url
+  File.write!(env_file, environment)
 
   UI.info(IO.ANSI.magenta() <> "Uploading SystemD Unit File..." <> IO.ANSI.reset())
   remote_dir = "systemd/"
   remote(:app, ["mkdir -p #{remote_dir}"])
   remote_path = remote_dir <> "#{app_name}.service"
   upload(:app, unit_file, remote_path)
-
-  message = """
-
-    You should now ssh onto the server and  create a link in
-    /etc/systemd/system/ to allow systemd to manage the #{app_name}
-    service.  Then, enable the service.
-  """
-  command = """
-      sudo ln -s #{workspace}/#{remote_path} \\
-                 /etc/systemd/system/#{app_name}.service
-      systemctl enable #{app_name}
-      systemctl start #{app_name}
-  """
-  UI.info(IO.ANSI.magenta() <> message)
-  UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())
+  upload(:app, env_file, remote_dir)
 
   message = """
 
@@ -79,6 +70,26 @@ task :init_systemd do
 
   command = """
       sudo systemctl daemon-reload
+  """
+  UI.info(IO.ANSI.magenta() <> message)
+  UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())
+
+  message = """
+
+    If this is your first time running `init_systemd` you must complete the
+    following steps to enable the `#{app_name}.service`:
+        - `ssh` onto the server.
+        - Create a link from /etc/systemd/system/ to the #{app_name} unit file.
+        - Keep your secrets secret by making the environment file private to root.
+        - Enable and start the service.
+  """
+  command = """
+      sudo ln -s #{workspace}/#{remote_path} /etc/systemd/system/#{app_name}.service
+      sudo mv #{workspace}/#{remote_dir}#{app_name}.env /etc/#{app_name}.env
+      sudo chown root:root /etc/#{app_name}.env
+      sudo chmod 400 /etc/#{app_name}.env
+      sudo systemctl enable #{app_name}
+      sudo systemctl start #{app_name}
   """
   UI.info(IO.ANSI.magenta() <> message)
   UI.info(IO.ANSI.cyan() <> command <> IO.ANSI.reset())

@@ -5,7 +5,7 @@ defmodule BootlegTest.MixProject do
     [
       app: :bootleg_test,
       description: "Test Application to Work on Deployment with Bootleg.",
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -68,6 +68,7 @@ defmodule BootlegTest.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
       {:bootleg, path: "../bootleg", only: :dev}
+      #{:bootleg, github: "spinlock99/bootleg", only: :dev}
     ]
   end
 

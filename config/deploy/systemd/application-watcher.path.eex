@@ -1,5 +1,5 @@
 [Path]
-PathModified=/var/www/haikuter/current/
+PathModified=<%= workspace %>/<%= app_name %>/bin/<%= app_name %>
 
 [Install]
 WantedBy=multi-user.target

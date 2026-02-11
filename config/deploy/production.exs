@@ -35,6 +35,9 @@ task :init_systemd do
   workspace    = Config.get_role(:app).options[:workspace]
   database_url = "ecto://postgres:postgres@#{host_name}/#{app_name}_#{mix_env}"
 
+  #
+  # Application Service
+  #
   unit_file_template = "config/deploy/systemd/application.service.eex"
   unit_directory = "releases/systemd/"
   System.cmd("mkdir", ["-p", unit_directory])
@@ -48,6 +51,9 @@ task :init_systemd do
                                               host_name: host_name
   File.write!(unit_file, service)
 
+  #
+  # ENV File
+  #
   env_file_template = "config/deploy/systemd/application.env.eex"
   env_file = unit_directory <> "#{app_name}.env"
   environment = EEx.eval_file env_file_template, app_name: app_name,
@@ -55,12 +61,30 @@ task :init_systemd do
                                                  database_url: database_url
   File.write!(env_file, environment)
 
+  #
+  # Application Watcher Path
+  #
+  watcher_path_template = "config/deploy/systemd/application-watcher.path.eex"
+  watcher_path_file = unit_directory <> "#{app_name}-watcher.path"
+  watcher_path = EEx.eval_file watcher_path_template, app_name: app_name,
+                                                      workspace: workspace
+  File.write!(watcher_path_file, watcher_path)
+  #
+  # Application Watcher Service
+  #
+  watcher_service_template = "config/deploy/systemd/application-watcher.service.eex"
+  watcher_service_file = unit_directory <> "#{app_name}-watcher.service"
+  watcher_service = EEx.eval_file watcher_service_template, app_name: app_name
+  File.write!(watcher_service_file, watcher_service)
+
   UI.info(IO.ANSI.magenta() <> "Uploading SystemD Unit File..." <> IO.ANSI.reset())
   remote_dir = "systemd/"
   remote(:app, ["mkdir -p #{remote_dir}"])
   remote_path = remote_dir <> "#{app_name}.service"
   upload(:app, unit_file, remote_path)
   upload(:app, env_file, remote_dir)
+  upload(:app, watcher_path_file, remote_dir)
+  upload(:app, watcher_service_file, remote_dir)
 
   message = """
 

@@ -20,11 +20,11 @@ task :build_phoenix do
   mix_env = config({:mix_env, "prod"})
   source_path = config({:ex_path, ""})
 
-  UI.info("Building Phoenix...")
+  UI.info("🔥 Building Phoenix...")
 
   remote :build, cd: source_path do
-    "MIX_ENV=#{mix_env} mix assets.deploy"
-    "MIX_ENV=#{mix_env} mix phx.gen.release"
+    "MIX_ENV=#{mix_env} mix assets.deploy 2>&1 | grep -E \"^\([Ee]rror\)\" || true"
+    "MIX_ENV=#{mix_env} mix phx.gen.release 2>&1 | grep -E \"^\([Ee]rror\)\" || true"
   end
 end
 

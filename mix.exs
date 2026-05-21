@@ -5,7 +5,7 @@ defmodule BootlegTest.MixProject do
     [
       app: :bootleg_test,
       description: "Test Application to Work on Deployment with Bootleg.",
-      version: "0.1.1",
+      version: "0.1.2",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,

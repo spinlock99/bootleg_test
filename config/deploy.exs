@@ -11,7 +11,7 @@ use Bootleg.DSL
 use Bootleg.DSL
 alias Bootleg.{Config, UI}
 
-role :build, "localhost", workspace: "/home/builder/build",
+role :build, "localhost", workspace: "/home/builder/build/current",
                           user: "builder",
                           identity: "~/.ssh/id_ed25519",
                           silently_accept_hosts: true

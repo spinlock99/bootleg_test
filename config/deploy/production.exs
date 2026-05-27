@@ -12,7 +12,7 @@ require System
 #  - `identity`: local path to an identity file that will be used for SSH authentication instead of a password
 #  - `workspace`: remote file system path to be used for building and deploying this Elixir project
 
-role :app, ["bootleg-test.com"], workspace: "/var/www/bootleg",
+role :app, ["bootleg-test.com"], workspace: "/var/www/bootleg/current",
                                  user: "builder",
                                  app_port: 4002,
                                  identity: "~/.ssh/id_ed25519",
@@ -39,7 +39,7 @@ task :init_systemd do
   # Application Service
   #
   unit_file_template = "config/deploy/systemd/application.service.eex"
-  unit_directory = "releases/systemd/"
+  unit_directory = "current/systemd/"
   System.cmd("mkdir", ["-p", unit_directory])
   unit_file = unit_directory <> "#{app_name}.service"
   service = EEx.eval_file unit_file_template, app_name: app_name,
@@ -135,7 +135,7 @@ task :init_nginx do
   workspace  = Config.get_role(:app).options[:workspace]
 
   nginx_config_template = "config/deploy/nginx/application.conf.eex"
-  nginx_config_dir = "releases/nginx/"
+  nginx_config_dir = "current/nginx/"
   System.cmd("mkdir", ["-p", nginx_config_dir])
   nginx_config_file = nginx_config_dir <> "#{app_name}.conf"
   nginx_config = EEx.eval_file nginx_config_template, app_name: app_name,
@@ -179,7 +179,7 @@ task :gen_cert do
   extensions_config_template = "config/deploy/ssl/extensions.conf.eex"
 
   # create release directory for self_signed_cert files
-  cert_dir = "releases/ssl/"
+  cert_dir = "current/ssl/"
   File.mkdir_p!(cert_dir)
   shell_args = [cd: cert_dir, into: IO.stream()]
   openssl = System.find_executable("openssl")

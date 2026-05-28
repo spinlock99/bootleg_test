@@ -1,5 +1,5 @@
 [Path]
-PathModified=<%= workspace %>/current
+PathModified=<%= workspace %>/current/bin/<%= app_name %>
 
 [Install]
 WantedBy=multi-user.target

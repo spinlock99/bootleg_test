@@ -14,9 +14,9 @@ Environment=PHX_HOST=<%= host_name %>
 Environment=LANG=en_US.UTF-8
 EnvironmentFile=/etc/<%= app_name %>.env
 
-WorkingDirectory=<%= workspace %>/<%= app_name %>
-ExecStart=<%= workspace %>/<%= app_name %>/bin/<%= app_name %> start
-ExecStop=<%= workspace %>/<%= app_name %>/bin/<%= app_name %> stop
+WorkingDirectory=<%= workspace %>/current
+ExecStart=<%= workspace %>/current/bin/<%= app_name %> start
+ExecStop=<%= workspace %>/current/bin/<%= app_name %> stop
 
 [Install]
 WantedBy=multi-user.target

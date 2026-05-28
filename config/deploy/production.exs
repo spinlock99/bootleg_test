@@ -12,8 +12,9 @@ require System
 #  - `identity`: local path to an identity file that will be used for SSH authentication instead of a password
 #  - `workspace`: remote file system path to be used for building and deploying this Elixir project
 
-role :app, ["bootleg-test.com"], workspace: "/var/www/bootleg/current",
+role :app, ["bootleg-test.com"], workspace: "/var/www/bootleg/bootleg_test",
                                  user: "builder",
+                                 keep_releases: 5,
                                  app_port: 4002,
                                  identity: "~/.ssh/id_ed25519",
                                  silently_accept_hosts: true
@@ -74,7 +75,12 @@ task :init_systemd do
   #
   watcher_service_template = "config/deploy/systemd/application-watcher.service.eex"
   watcher_service_file = unit_directory <> "#{app_name}-watcher.service"
-  watcher_service = EEx.eval_file watcher_service_template, app_name: app_name
+  pretty_app_name = app_name
+                    |> Atom.to_string()
+                    |> String.split("_")
+                    |> Enum.map(&String.capitalize/1)
+                    |> Enum.join(" ")
+  watcher_service = EEx.eval_file watcher_service_template, app_name: app_name, pretty_app_name: pretty_app_name
   File.write!(watcher_service_file, watcher_service)
 
   UI.info(IO.ANSI.magenta() <> "Uploading SystemD Unit File..." <> IO.ANSI.reset())

@@ -1,5 +1,5 @@
 [Unit]
-Description=<%= app_name %> Restarter
+Description=<%= pretty_app_name %> Restarter
 After=network.target
 
 [Service]

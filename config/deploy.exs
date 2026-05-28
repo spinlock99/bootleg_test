@@ -11,7 +11,7 @@ use Bootleg.DSL
 use Bootleg.DSL
 alias Bootleg.{Config, UI}
 
-role :build, "localhost", workspace: "/home/builder/build/current",
+role :build, "localhost", workspace: "/home/builder/build",
                           user: "builder",
                           identity: "~/.ssh/id_ed25519",
                           silently_accept_hosts: true
@@ -19,14 +19,12 @@ role :build, "localhost", workspace: "/home/builder/build/current",
 task :build_phoenix do
   mix_env = config({:mix_env, "prod"})
   source_path = config({:ex_path, ""})
-  app_name = Config.app()
-  build_log = "/tmp/bootleg-#{app_name}-build.log"
 
   UI.info("🔥 Building Phoenix...")
 
   remote :build, cd: source_path do
-    "MIX_ENV=#{mix_env} mix assets.deploy >> #{build_log}"
-    "MIX_ENV=#{mix_env} mix phx.gen.release >> #{build_log}"
+    "MIX_ENV=#{mix_env} mix assets.deploy"
+    "MIX_ENV=#{mix_env} mix phx.gen.release"
   end
 end
 
